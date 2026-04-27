@@ -584,14 +584,44 @@
   const FARMACIA_ID = new URLSearchParams(location.search).get('f') || 'demo';
   const API_URL = '/.netlify/functions/processar-receita';
 
-  const FARMACIAS = {
-    'demo': 'Farmácia Demo',
-    'f001': 'Farmácia São João',
-    'f002': 'Drogaria Central',
-    'f003': 'Farmácia Bem Estar',
-  };
+  // Carrega dados da farmácia do localStorage (cadastrados no painel admin)
+  function carregarFarmacia() {
+    try {
+      const farmacias = JSON.parse(localStorage.getItem('rf_farmacias') || '[]');
+      const farmacia = farmacias.find(f => f.id === FARMACIA_ID);
 
-  document.getElementById('farmacia-nome').textContent = FARMACIAS[FARMACIA_ID] || `Farmácia #${FARMACIA_ID}`;
+      if (farmacia) {
+        // Tem logo — exibe a imagem no lugar do texto
+        if (farmacia.logo) {
+          const header = document.querySelector('header');
+          const tagAtual = document.getElementById('farmacia-nome');
+
+          const logoImg = document.createElement('img');
+          logoImg.src = farmacia.logo;
+          logoImg.alt = farmacia.nome;
+          logoImg.style.cssText = 'height:32px;max-width:120px;object-fit:contain;border-radius:6px';
+
+          tagAtual.replaceWith(logoImg);
+        } else {
+          document.getElementById('farmacia-nome').textContent = farmacia.nome;
+        }
+      } else {
+        // Fallback para nomes padrão
+        const FARMACIAS = {
+          'demo': 'Farmácia Demo',
+          'f001': 'Farmácia São João',
+          'f002': 'Drogaria Central',
+          'f003': 'Farmácia Bem Estar',
+        };
+        document.getElementById('farmacia-nome').textContent =
+          FARMACIAS[FARMACIA_ID] || `Farmácia #${FARMACIA_ID}`;
+      }
+    } catch {
+      document.getElementById('farmacia-nome').textContent = 'Farmácia';
+    }
+  }
+
+  carregarFarmacia();
 
   let stream = null;
 
