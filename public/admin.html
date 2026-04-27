@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Receita Fácil</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface2: #1c1c1c;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --text2: #8a8780;
+      --accent: #00e5a0;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding: 32px 24px; max-width: 640px; margin: 0 auto; }
+    h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .sub { color: var(--text2); font-size: 14px; font-weight: 300; margin-bottom: 32px; }
+    .section { margin-bottom: 28px; }
+    .section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); margin-bottom: 12px; }
+    .card { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 20px; }
+    label { font-size: 13px; color: var(--text2); display: block; margin-bottom: 6px; }
+    input, select {
+      width: 100%; padding: 12px 14px; background: var(--surface2);
+      border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+      color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+      outline: none; transition: border-color 0.15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    .btn {
+      width: 100%; padding: 14px; background: var(--accent); color: #000;
+      border: none; border-radius: var(--radius-sm); font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 14px;
+      transition: all 0.15s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .qr-result { display: none; text-align: center; padding: 24px 0; }
+    .qr-result canvas { border-radius: 12px; background: white; padding: 16px; }
+    .qr-url { font-size: 12px; color: var(--accent); margin-top: 12px; word-break: break-all; }
+    .qr-sub { font-size: 12px; color: var(--text2); margin-top: 6px; font-weight: 300; }
+    .btn-outline {
+      display: inline-block; margin-top: 12px; padding: 10px 20px;
+      border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+      color: var(--text2); font-size: 13px; cursor: pointer; background: transparent;
+      font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+    }
+    .btn-outline:hover { background: var(--surface2); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .metric { background: var(--surface2); border-radius: var(--radius-sm); padding: 16px; }
+    .metric-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 28px; color: var(--accent); }
+    .metric-label { font-size: 12px; color: var(--text2); font-weight: 300; margin-top: 2px; }
+    .alert { padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; border-left: 2px solid var(--accent); background: rgba(0,229,160,0.06); color: var(--text2); margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+<h1>Painel da Farmácia</h1>
+<p class="sub">Gere o QR Code e acompanhe o uso</p>
+
+<div class="section">
+  <div class="section-title">Gerar QR Code</div>
+  <div class="card">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label>Nome da farmácia</label>
+        <input type="text" id="nome-farmacia" placeholder="Ex: Farmácia São João" />
+      </div>
+      <div>
+        <label>ID único da unidade</label>
+        <input type="text" id="farmacia-id" placeholder="Ex: f001" />
+      </div>
+      <div>
+        <label>URL base do app</label>
+        <input type="text" id="base-url" placeholder="Ex: https://receita-facil.netlify.app" />
+      </div>
+    </div>
+    <button class="btn" onclick="gerarQR()">Gerar QR Code</button>
+
+    <div class="qr-result" id="qr-result">
+      <canvas id="qr-canvas"></canvas>
+      <div class="qr-url" id="qr-url"></div>
+      <div class="qr-sub">Imprima e fixe no balcão da farmácia</div>
+      <button class="btn-outline" onclick="baixarQR()">Baixar PNG</button>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Métricas de uso</div>
+  <div class="grid2">
+    <div class="metric">
+      <div class="metric-val" id="m-scans">—</div>
+      <div class="metric-label">Scans hoje</div>
+    </div>
+    <div class="metric">
+      <div class="metric-val" id="m-mes">—</div>
+      <div class="metric-label">Scans este mês</div>
+    </div>
+    <div class="metric">
+      <div class="metric-val" id="m-meds">—</div>
+      <div class="metric-label">Medicamentos lidos</div>
+    </div>
+    <div class="metric">
+      <div class="metric-val" id="m-leg">—</div>
+      <div class="metric-label">Boa legibilidade</div>
+    </div>
+  </div>
+  <div class="alert">
+    Em produção: métricas reais via Neon Postgres ou Supabase. Por agora, os logs ficam no console da Netlify Function.
+  </div>
+</div>
+
+<script>
+  function gerarQR() {
+    const id = document.getElementById('farmacia-id').value.trim() || 'demo';
+    const base = document.getElementById('base-url').value.trim() || window.location.origin;
+    const url = `${base}/?f=${encodeURIComponent(id)}`;
+
+    document.getElementById('qr-url').textContent = url;
+
+    QRCode.toCanvas(document.getElementById('qr-canvas'), url, {
+      width: 240,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' }
+    }, err => {
+      if (!err) document.getElementById('qr-result').style.display = 'block';
+    });
+  }
+
+  function baixarQR() {
+    const canvas = document.getElementById('qr-canvas');
+    const link = document.createElement('a');
+    const id = document.getElementById('farmacia-id').value || 'farmacia';
+    link.download = `qrcode-${id}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  }
+
+  // Métricas dummy (substituir por fetch ao banco em produção)
+  document.getElementById('m-scans').textContent = '0';
+  document.getElementById('m-mes').textContent = '0';
+  document.getElementById('m-meds').textContent = '0';
+  document.getElementById('m-leg').textContent = '—';
+</script>
+</body>
+</html>
